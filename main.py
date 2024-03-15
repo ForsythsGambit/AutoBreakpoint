@@ -5,6 +5,7 @@ breakpointLineBeginnings = []
 filesToParse = []
 gdbConfigFile = ""
 breakpoints = []
+replaceBreakpoints = True
 
 #taken from: https://stackoverflow.com/a/1432949, sets cwd to location of this file.
 # TODO: support custom directory locations via yaml file
@@ -16,13 +17,14 @@ with open("autoBreakConfig.yaml") as yamlFile:
 	filesToParse = data["files_to_parse"].copy() #[file for file in data["files_to_parse"]]
 	gdbConfigFile = data["gdb_config_file"]
 	breakpointLineBeginnings = data["breakpoint_line_beginning"]
+	replaceBreakpoints=data["replace_breakpoints"]
 
 for file in filesToParse:
 	with open(file) as parsingFile:
 		for lineNumber, line in enumerate(parsingFile):
-			print(f"{lineNumber+1}: {str(line).strip()}")
+			#print(f"{lineNumber+1}: {str(line).strip()}")
 			if str(line).lstrip().startswith(tuple(breakpointLineBeginnings)):
-				print(f"We need to break on line {lineNumber+1}")
+				#print(f"We need to break on line {lineNumber+1}")
 				breakpoints.append(f"break {file}:{lineNumber+1}")
 
 
@@ -34,17 +36,23 @@ else:
 	with open(gdbConfigFile, 'r') as gdbinit:
 		lines=gdbinit.readlines()
 	try:
-		print(lines)
+		#print(lines)
+		if (replaceBreakpoints):
+			del lines[lines.index("#start: breakpoints\n")+1:lines.index("#end: breakpoints\n")]
+		#print(lines)
 		startSegment = lines.index("#start: breakpoints\n")
+		endSegment = lines.index("#end: breakpoints\n")
+		 
 	except ValueError:
 		#TODO: add proper handling
-		print("did not find start")
+		print("did not find startpoint, exiting")
+		exit()
+		"""
 		startSegment = 1
 		breakpoints.insert(0, "#start: breakpoints")
 		breakpoints.append("#end: breakpoints")
-		
-	finally:
-		for index,breakpoint in enumerate(breakpoints):
+		"""
+	for index,breakpoint in enumerate(breakpoints):
 			lines.insert(startSegment+index+1, f"{breakpoint}\n")
-		with open(gdbConfigFile, 'w') as gdbinit:
-			gdbinit.writelines(lines) 
+	with open(gdbConfigFile, 'w') as gdbinit:
+		gdbinit.writelines(lines)
