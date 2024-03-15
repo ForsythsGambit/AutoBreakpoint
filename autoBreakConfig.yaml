@@ -4,3 +4,4 @@ breakpoint_line_beginning:
 files_to_parse:
   - test.c
 gdb_config_file: .gdbinit
+replace_breakpoints: True
